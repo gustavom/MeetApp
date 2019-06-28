@@ -200,6 +200,3 @@ Crie a pasta `controllers` e `models` dentro de `app`
 mkdir src/app/controllers
 mkdir src/app/models
 ```
-
-
-Novo texto
