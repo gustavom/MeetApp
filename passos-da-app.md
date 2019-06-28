@@ -162,3 +162,41 @@ charset = utf-8
 trim_trailing_whitespace = false
 insert_final_newline = false
 ```
+
+### Continuando a App - Configs
+
+Crie a pasta `config` dentro de `src`
+```sh
+mkdir src/config
+```
+
+Crie o arquivo `database.js` dentro de config
+```sh
+touch src/config/database.js
+```
+
+
+### Continuando a App - Pasta database
+
+Crie a pasta `database` dentro de `src`
+```sh
+mkdir src/database
+```
+
+Crie a pasta `migrations` dentro de `database`
+```sh
+mkdir src/database/migrations
+```
+
+### Continuando a App - Pasta app
+
+Crie a pasta `app` dentro de `src`
+```sh
+mkdir src/app
+```
+
+Crie a pasta `controllers` e `models` dentro de `app`
+```sh
+mkdir src/app/controllers
+mkdir src/app/models
+```
