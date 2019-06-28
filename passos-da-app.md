@@ -109,3 +109,56 @@ docker run --name databasemeetapp -e POSTGRES_PASSWORD=docker p 5432:5432 -d pos
 ```
 
 No banco de dados, cria database "meetapp". Pode usar o postbird para isso.
+
+### 12 - Instalando o ESlint
+
+```sh
+npm install eslint -D
+```
+
+Instale o airbnb styleguide.
+O arquivo completo de conf do eslintrc esta no repositório do projeto.
+
+Comando para fix automático:
+
+```sh
+yarn eslint --fix src --ext .js
+```
+
+### 12 - Instalando o prettier
+
+```sh
+npm install prettier eslint-config-prettier eslint-plugin-prettier -D
+```
+Crie o arquivo prettierrc
+```sh
+touch .prettierrc
+```
+No arquivo, configure:
+```json
+{
+  "singleQuote": true,
+  "trailingComma": "es5"
+}
+```
+
+
+### 13 - Editor config 
+Crie o arquivo `.editorconfig`
+
+```sh
+touch .editorconfig
+```
+
+No arquivo, configure:
+```
+root = true
+
+[*]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = false
+```
