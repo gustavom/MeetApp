@@ -20,8 +20,9 @@ touch src/app.js src/routes.js src/server.js
 npm install sequelize
 ```
 ```sh
+# o sucrese adiciona a sintaxe de import # from e o export default
 # o nodemon da restart no servidor quando qualquer arquivo da app é salvo
-npm install nodemon -D
+npm install sucrase nodemon -D
 ```
 
 ### 4 - Arquivo app.js
@@ -65,3 +66,46 @@ npm install nodemon -D
 - no terminal rode:
   - `node src/server.js`
 - Acesse [http://localhost:3333](http://localhost:3333)
+
+### 8 - Atualização de sintaxe
+Nos arquivos `app.js`, `server.js` e `router.js`, atualize a sintaxe, como no exemplo abaixo:
+
+```js
+const xyz = require('abc');
+// para
+import xyz from 'abc'
+
+// Mude também
+module.exports = xyz
+// para
+export default xyz
+```
+
+### 9 - Script dev em package.json
+No arquivo `package.json`, em `scripts`, adicione:
+```js
+"dev": "nodemon src/server.js"
+``` 
+
+### 10 - Criando arquivo de configuração do nodemon
+Na raiz do projeto, crie o arquivo `nodemon.json`:
+
+```sh
+touch nodemon.json
+```
+E no arquivo, adicione
+```json
+{
+  "execMap": {
+    "js": "sucrase-node"
+  }
+}
+```
+
+### 11 - Criando o serviço de db postgres com o docker
+
+```sh
+docker run --name databasemeetapp -e POSTGRES_PASSWORD=docker p 5432:5432 -d postgres
+```
+
+No banco de dados, cria database "meetapp". Pode usar o postbird para isso.
