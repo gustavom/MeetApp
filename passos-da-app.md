@@ -200,3 +200,304 @@ Crie a pasta `controllers` e `models` dentro de `app`
 mkdir src/app/controllers
 mkdir src/app/models
 ```
+
+### Arquivo `.sequelizerc`
+
+Crie o arquivo `.sequelizerc` e adicione
+```sh
+touch .sequelizerc
+```
+```js
+const { resolve } = require('path');
+
+module.exports = {
+  config: resolve(__dirname, 'src','config', 'database.js'),
+  'models-path':resolve(__dirname, 'src', 'app','models'),
+  'migrations-path': resolve(__dirname, 'src', 'database', 'migrations'),
+  'seeder-path': resolve(__dirname, 'src', 'database', 'migrations'),
+}
+```
+
+
+### Instalando os dialects do sequelize
+
+Instale:
+
+```sh
+npm install mysql2 pg pg-hstore
+```
+
+### Arquivo `config/database.js`
+
+Adicione
+
+```js
+module.exports = {
+  // dialect: 'postgres',
+  dialect: 'mysql',
+  host: 'localhost',
+  username: 'postgres',
+  password: 'docker',
+  database: 'databasemeetapp',
+  define: {
+    timestamps: true,
+    underscored: true,
+    underscoredall: true,
+  },
+};
+```
+
+### Criando a migration de usuário
+No terminal, rode o comando para criar a migration de usuário.
+A migration faz o papel de criar a estrutura do conteúdo no banco de dados.
+
+```sh
+// o comando npx pode ser trocado por yarn
+npx sequelize migration:create --name=create-users
+```
+
+Vai ser criado um arquivo de migration na pasta `database/migrations`, nele, adicione:
+```js
+module.exports = {
+  up: (queryInterface, Sequelize) => {
+    return queryInterface.createTable('users', {
+      id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      email: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      password_hash: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      provider: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+    });
+  },
+
+  down: queryInterface => {
+    return queryInterface.dropTable('users');
+  },
+};
+```
+
+### Criando a migration de usuário
+No terminal, rode o comando para criar a tabela de usuários
+
+```sh
+// o comando npx pode ser trocado por yarn
+npx sequelize db:migrate
+```
+
+
+### Criando o model de usuário
+Crie o arquivo:
+```sh
+touch src/app/models/User.js
+```
+
+Adicione:
+```js
+import { Model, Sequelize } from 'sequelize';
+
+class User extends Model {
+  static init(sequelize) {
+    super.init(
+      {
+        name: Sequelize.STRING,
+        email: Sequelize.STRING,
+        password_hash: Sequelize.STRING,
+        provider: Sequelize.BOOLEAN,
+      },
+      {
+        sequelize,
+      }
+    );
+  }
+}
+
+export default User;
+
+```
+
+### Criando a conexão com o banco de dados
+Crie o arquivo:
+```sh
+touch src/database/index.js
+```
+
+Adicione
+
+```js
+import Sequelize from 'sequelize';
+
+import User from '../app/models/User';
+
+import databaseconfig from '../config/database';
+
+const models = [User];
+
+class Database {
+  constructor() {
+    this.init();
+  }
+
+  init() {
+    this.connection = new Sequelize(databaseconfig);
+
+    models.map(model => model.init(this.connection));
+  }
+}
+
+export default new Database();
+
+```
+
+No arquivo `src/app.js`, adicione:
+```js
+import './database';
+```
+
+### Criando uma rota de teste
+No arquivo `routes.js`, adicione:
+
+```js
+import User from './app/models/User';
+```
+
+A rota atual, troque por:
+```js
+routes.get('/', async (req, res) => {
+  const user = await User.create({
+    name: 'Gustavo Mart',
+    email: 'gustavo_crj@hotmail.com',
+    password_hash: '123456',
+  });
+  return res.json(user);
+});
+```
+
+### User controller
+
+Crie o arquivo:
+```sh
+touch src/app/controllers/UserController.js
+```
+Adicione
+```js
+import User from '../models/User';
+
+class UserController {
+  async store(req, res) {
+    const user = await User.create(req.body);
+    return res.json(user);
+  }
+}
+export default new UserController();
+```
+
+No arquivo de rotas:
+- Importe o `import User from './app/controllers/UserController.js'`
+
+Deve ficar tudo assim:
+```js
+import { Router } from 'express';
+
+import UserController from './app/controllers/UserController';
+
+const routes = new Router();
+
+routes.post('/user', UserController.store);
+
+export default routes;
+
+```
+
+
+### Gerando o hash da senha
+
+Instale:
+
+```js
+npm install bcryptjs
+```
+
+No model de usuário, adicione:
+```js
+password: Sequelize.VIRTUAL,
+```
+
+Depois do método `init()`, adicione:
+```js
+this.addHook('beforeSave', async user => {
+      if (user.password) {
+        user.password_hash = await bcrypt.hash(user.password, 8);
+      }
+    });
+
+    return this;
+```
+
+O arquivo vai ficar assim:
+```js
+import { Model, Sequelize } from 'sequelize';
+import bcrypt from 'bcryptjs';
+
+class User extends Model {
+  static init(sequelize) {
+    super.init(
+      {
+        name: Sequelize.STRING,
+        email: Sequelize.STRING,
+        password: Sequelize.VIRTUAL,
+        password_hash: Sequelize.STRING,
+        provider: Sequelize.BOOLEAN,
+      },
+      {
+        sequelize,
+      }
+    );
+    this.addHook('beforeSave', async user => {
+      if (user.password) {
+        user.password_hash = await bcrypt.hash(user.password, 8);
+      }
+    });
+
+    return this;
+  }
+}
+
+export default User;
+
+```
+
+### Instal o Jason Web Token
+```sh
+npm install jsonwebtoken
+```
+
+Crie o arquivo:
+```sh
+touch src/app/controllers/SessionController.js
+```
