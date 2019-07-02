@@ -501,3 +501,73 @@ Crie o arquivo:
 ```sh
 touch src/app/controllers/SessionController.js
 ```
+```js
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+
+class SessionController {
+  async store(req, res) {
+    const { email, password } = req.body;
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      res.status(401).json({ error: 'User not found' });
+    }
+
+    if (!(await user.checkPassword(password))) {
+      res.status(401).json({ error: 'Password does not match' });
+    }
+
+    const { id, name } = user;
+
+    return res.json({
+      user: {
+        id,
+        name,
+        email,
+      },
+      token: jwt.sign({ id }, 'd307bd3af3e617baa8b923e3de383d2c', {
+        expiresIn: '7d',
+      }),
+    });
+  }
+}
+export default new SessionController();
+
+```
+
+O método `checkPassword`, foi criado no `UserController.js`
+```js
+checkPassword(password) {
+    return bcrypt.compare(password, this.password_hash); // retorna true se os dois valores batem .compare(valor1, valor2)
+  }
+```
+
+### Arquivo auth.js
+Crie o o arquivo:
+```sh
+touch src/config/auth.js
+```
+```js
+export default {
+  secret: 'your secret md5', // pode gerar isso online
+  expiresIn: '7d',
+};
+```
+
+No SessionsController, importe o arquivo
+```js
+import authConfig from '../../config/auth';
+```
+Modifique o token, de:
+```js
+token: jwt.sign({ id }, 'd307bd3af3e617baa8b923e3de383d2c', {
+        expiresIn: '7d',
+      }),
+```
+Para 
+```js
+token: jwt.sign({ id }, authConfig.secret, {
+        expiresIn: authConfig.expiresIn,
+      }),
+```
