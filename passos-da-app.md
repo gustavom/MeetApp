@@ -697,3 +697,10 @@ class UserController {
 }
 export default new UserController();
 ```
+
+### Validando dados
+Instale a lib YUP :
+```sh
+npm install yup
+// yarn add yup
+```
