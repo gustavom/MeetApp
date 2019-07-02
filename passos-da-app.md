@@ -571,3 +571,129 @@ token: jwt.sign({ id }, authConfig.secret, {
         expiresIn: authConfig.expiresIn,
       }),
 ```
+
+
+### Update de usuário
+No arquivo `UserController.js`, adicione o método update:
+```js
+async update(req, res) {
+    return res.json({ ok: true });
+  }
+```
+
+No arquivo `routes.js`, adicione:
+```js
+routes.put('/users', UserController.update);
+```
+
+Crie o arquivo:
+```sh
+touch src/app/middlewares/auth.js
+```
+Inicialmente, vamos testar algumas coisas, adicione:
+```js
+export default (req, res, next) => {
+  const authHeader = req.header.authorization;
+  console.log(authHeader);
+
+  return next();
+};
+```
+
+No arquivo de rotas, import o `src/app/middlewares/auth.js`
+```js
+import authMiddleware from './app/middlewares/auth';
+```
+E antes da rota de atualização, adicone o middlewares de forma global:
+```js
+// nossa lista atual de rotas
+routes.post('/users', UserController.store);
+routes.post('/sessions', SessionController.store);
+
+routes.user(authMiddleware);
+
+routes.put('/users', UserController.update);
+```
+
+### Verificações no middleware de autenticação
+Atualize o arquivo `src/app/middlewares/auth.js`
+```js
+import jwt from 'jsonwebtoken';
+import { promisify } from 'util';
+import authConfig from '../../config/auth';
+
+export default async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.send(401).json({ error: 'Token not provided' });
+  }
+
+  const [, token] = authHeader.split(' ');
+
+  try {
+    const decoded = await promisify(jwt.verify)(token, authConfig.secret);
+
+    req.userId = decoded.id;
+
+    return next();
+  } catch (err) {
+    return res.send(401).json({ error: 'Token invalid' });
+  }
+};
+```
+
+### Verificações no UserController
+Atualize o arquivo `UserController.js`
+```js
+import User from '../models/User';
+
+class UserController {
+  async store(req, res) {
+    const userExists = await User.findOne({ where: { email: req.body.email } });
+
+    if (userExists) {
+      return res.status(400).json({ error: 'User already exists.' });
+    }
+
+    const { id, name, email, provider } = await User.create(req.body);
+    return res.json({
+      id,
+      name,
+      email,
+      provider,
+    });
+  }
+
+  async update(req, res) {
+    const { email, oldPassword } = req.body;
+
+    const user = await User.findByPk(req.userId);
+    // verificando se o user esta modificando o email
+    if (email !== user.email) {
+      const userExists = await User.findOne({
+        where: { email },
+      });
+
+      if (userExists) {
+        return res.status(400).json({ error: 'User already exists.' });
+      }
+    }
+
+    // verifica se o password atual bate
+    if (oldPassword && !(await user.checkPassword(oldPassword))) {
+      return res.status(400).json({ error: 'Password does not match.' });
+    }
+
+    const { id, name, provider } = await user.update(req.body);
+
+    return res.json({
+      id,
+      name,
+      email,
+      provider,
+    });
+  }
+}
+export default new UserController();
+```
